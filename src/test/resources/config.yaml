@@ -1,0 +1,18 @@
+# The number of second the the user suspended after exceeding the limit
+rate_limit_suspend_seconds: 300
+
+# Time window for the rate limit. If this parameter set to 10 and the parameter `requests_rate_limit` set to 1
+# it means `1 request per 10 seconds`
+rate_limit_time_window_seconds: 10
+
+# Number of requests per time window
+requests_rate_limit: 1
+
+# custom rate limits for specific API keys, all the parameters is optional,
+# if not set will use the default values
+api_keys_custom_rate_limits:
+  # API key
+  aboaaa:
+    rate_limit_suspend_seconds: 60
+    rate_limit_time_window_seconds: 1
+    requests_rate_limit: 10
