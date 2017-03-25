@@ -1,20 +1,20 @@
-package com.exercise.hotels;
+package com.exercise.hotels.dal.csv;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.lang3.StringUtils;
+import com.exercise.hotels.entity.*;
+import com.exercise.hotels.config.CSVHotelsDALConfig;
+import com.exercise.hotels.dal.HotelsDAL;
 
-import java.io.FileReader;
+import javax.inject.Singleton;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.*;
 
+@Singleton
 public class CSVHotelsDAL implements HotelsDAL {
 
     private final Map<String, NavigableSet<Hotel>> hotelsByCity;
 
-    public CSVHotelsDAL(String csvFilePath) throws IOException {
-        hotelsByCity = HotelsCSVParser.parse(csvFilePath);
+    public CSVHotelsDAL(CSVHotelsDALConfig config) throws IOException {
+        hotelsByCity = HotelsCSVParser.parse(config.getCsvFilePath());
     }
 
 

@@ -1,4 +1,4 @@
-package com.exercise.hotels;
+package com.exercise.hotels.entity;
 
 import lombok.Builder;
 import lombok.Data;

@@ -1,31 +1,28 @@
-package com.exercise.hotels;
+package com.exercise.hotels.controller;
 
+import com.exercise.hotels.entity.Hotel;
+import com.exercise.hotels.entity.Order;
+import com.exercise.hotels.config.HotelsConfig;
+import com.exercise.hotels.dal.HotelsDAL;
+import com.exercise.hotels.ratelimit.RateLimitExceededException;
+import com.exercise.hotels.ratelimit.RateLimitHandler;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-@RestController()
+@RestController
 @RequestMapping("/hotels/{apiKey}")
 public class HotelsController {
 
+    @Inject
     private HotelsConfig config;
+    @Inject
     private HotelsDAL hotelsDAL;
+    @Inject
     private RateLimitHandler rateLimitHandler;
-
-
-    public HotelsController() throws IOException {
-        this.config = new HotelsConfig();
-        this.hotelsDAL = new CSVHotelsDAL("/Users/rantibi/hotels_exercise/src/test/resources/hoteldb.csv");
-        this.rateLimitHandler = new InMemoryRateLimitHandler(config);
-    }
 
     @RequestMapping("/search")
     public Iterable<Hotel> getHotelsByCityId(@PathVariable String apiKey,

@@ -1,21 +1,32 @@
-package com.exercise.hotels;
+package com.exercise.hotels.ratelimit;
 
+import com.exercise.hotels.config.RateLimitConfig;
+import com.google.common.util.concurrent.Striped;
 import lombok.EqualsAndHashCode;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
 
+@Singleton
 public class InMemoryRateLimitHandler implements RateLimitHandler {
-
+    @Inject
     private RateLimitConfig config;
+
     private ConcurrentHashMap<APIKeyTimeWindow, AtomicLong> requestForAPIKey = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Long> suspendedAPIKeys = new ConcurrentHashMap<>();
-    private AtomicBoolean cleanThreadActive = new AtomicBoolean(false);
+    private AtomicBoolean isCleanRequestForAPIKeyThreadActive = new AtomicBoolean(false);
+    private AtomicBoolean isCleanSuspendedAPIKeysThreadActive = new AtomicBoolean(false);
+    private Striped<Lock> locks;
 
     public InMemoryRateLimitHandler(RateLimitConfig config) {
         this.config = config;
+        locks = Striped.lock(config.getRateLimitSuspendedApiKeysLocksCount());
     }
 
     @Override
@@ -37,9 +48,21 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
 
     private void suspendIfRateLimitExceeded(String apiKey, long currMillis, long currentRequests) throws RateLimitExceededException {
         if (currentRequests > config.getRateLimitForAPIKey(apiKey).getRequestsRateLimit()) {
-            suspendedAPIKeys.putIfAbsent(apiKey,
-                    currMillis + TimeUnit.SECONDS.toMillis(config.getRateLimitForAPIKey(apiKey).getRateLimitSuspendSeconds()));
-            throw new RateLimitExceededException(suspendedAPIKeys.get(apiKey));
+            Long suspendUntil;
+            Lock lock = locks.get(apiKey);
+            try {
+                lock.lock();
+                long newSuspendUntil = currMillis + TimeUnit.SECONDS.toMillis(config.getRateLimitForAPIKey(apiKey).getRateLimitSuspendSeconds());
+                suspendUntil = suspendedAPIKeys.putIfAbsent(apiKey, newSuspendUntil);
+                if (suspendUntil == null) {
+                    suspendUntil = newSuspendUntil;
+                }
+            } finally {
+                lock.unlock();
+            }
+
+            cleanExpiredSuspendedAPIKeys();
+            throw new RateLimitExceededException(suspendUntil);
         }
     }
 
@@ -50,17 +73,14 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
             return;
         }
 
-        // TODO: check again if there is race issue here
         if (currMillis > suspendedUntil) {
             throw new RateLimitExceededException(suspendedAPIKeys.get(apiKey));
-        } else {
-            suspendedAPIKeys.remove(apiKey);
         }
     }
 
     private void cleanExpiredAPIKeyTimeWindows() {
         if (requestForAPIKey.size() >= config.getRateLimitForApiKeyTimeWindowMapCleanThreadTriggerItemsCount()) {
-            if (!cleanThreadActive.getAndSet(true)) {
+            if (!isCleanRequestForAPIKeyThreadActive.getAndSet(true)) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -69,7 +89,35 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
                                     .filter(apiKeyTimeWindow -> apiKeyTimeWindow.isExpired(System.currentTimeMillis()))
                                     .forEach(apiKeyTimeWindow -> requestForAPIKey.remove(apiKeyTimeWindow));
                         } finally {
-                            cleanThreadActive.set(false);
+                            isCleanRequestForAPIKeyThreadActive.set(false);
+                        }
+                    }
+                }).start();
+            }
+        }
+    }
+
+    private void cleanExpiredSuspendedAPIKeys() {
+        if (suspendedAPIKeys.size() >= config.getSuspendedCleanThreadTriggerItemsCount()) {
+            if (!isCleanSuspendedAPIKeysThreadActive.getAndSet(true)) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            suspendedAPIKeys.entrySet().stream()
+                                    .filter(entry -> entry.getValue() < System.currentTimeMillis())
+                                    .forEach(entry -> {
+                                        Lock lock = locks.get(entry.getKey());
+
+                                        try {
+                                            lock.lock();
+                                            requestForAPIKey.remove(entry.getKey());
+                                        } finally {
+                                            lock.unlock();
+                                        }
+                                    });
+                        } finally {
+                            isCleanSuspendedAPIKeysThreadActive.set(false);
                         }
                     }
                 }).start();

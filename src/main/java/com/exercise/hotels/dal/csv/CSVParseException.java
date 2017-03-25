@@ -1,4 +1,4 @@
-package com.exercise.hotels;
+package com.exercise.hotels.dal.csv;
 
 import org.apache.commons.csv.CSVRecord;
 

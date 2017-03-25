@@ -1,5 +1,6 @@
-package com.exercise.hotels;
+package com.exercise.hotels.dal.csv;
 
+import com.exercise.hotels.entity.Hotel;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
