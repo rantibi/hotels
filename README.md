@@ -1,4 +1,4 @@
-# hotels
+# Hotels
 You are provided with hotels database in CSV (Comma Separated Values) format.
 We need you to implement HTTP service, according to the API requirements described below. 
 1.  RateLimit: API calls need to be rate limited (request per 10 seconds) based on API Key provided in each http call.
