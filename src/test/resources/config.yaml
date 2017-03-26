@@ -1,6 +1,6 @@
 default_rate_limit:
   # The number of second the the user suspended after exceeding the limit
-  rate_limit_suspend_seconds: 300
+  rate_limit_suspend_seconds: 10
 
   # Time window for the rate limit. If this parameter set to 10 and the parameter `requests_rate_limit` set to 1
   # it means `1 request per 10 seconds`
@@ -9,14 +9,19 @@ default_rate_limit:
   # Number of requests per time window
   requests_rate_limit: 1
 
-# custom rate limits for specific API keys, all the parameters is optional,
-# if not set will use the default values
-api_keys_custom_rate_limits:
+# Define all the API keys in the system
+# Map from API key to custom rate limit
+# if custome rate limit doesn't set will use the default values
+api_keys:
   # API key
   6d848638-caa6-4875-b8df-2849fd792ae6:
     rate_limit_suspend_seconds: 60
     rate_limit_time_window_seconds: 10
     requests_rate_limit: 3
+  5d848638-caa6-4875-b8df-2849fd792ae4:
+    rate_limit_time_window_seconds: 700
+  d848638-caa6-4875-b8df-2849fd792ae6a:
+  d848638-caa6-4875-b8df-2849fd792ae6r:
 
 # How many item should be on the requests per api key map
 # so that the thread that clean all the expired items will run
@@ -35,4 +40,4 @@ rate_limit_suspended_api_keys_locks_count: 10
 suspended_clean_thread_trigger_items_count: 10
 
 # Path to the hotels CSV file
-csv_file_path: "/Users/rantibi/hotels_exercise/src/test/resources/hoteldb.csv"
+csv_file_path: "./src/test/resources/hoteldb.csv"

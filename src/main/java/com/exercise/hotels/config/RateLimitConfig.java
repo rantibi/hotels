@@ -9,5 +9,5 @@ public interface RateLimitConfig {
 
     long getSuspendedCleanThreadTriggerItemsCount();
 
-    CustomRateLimit getRateLimitForAPIKey(String apiKey);
+    RateLimit getRateLimitForAPIKey(String apiKey);
 }

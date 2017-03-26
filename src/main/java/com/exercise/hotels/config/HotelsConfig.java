@@ -1,25 +1,24 @@
 package com.exercise.hotels.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.xebia.jacksonlombok.JacksonLombokAnnotationIntrospector;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
-public class HotelsConfig implements RateLimitConfig, CSVHotelsDALConfig {
+public class HotelsConfig implements RateLimitConfig, CSVHotelsDALConfig, APIKeysConfig {
     @JsonProperty("default_rate_limit")
-    private CustomRateLimit defaultRateLimit = new CustomRateLimit();
+    private RateLimit defaultRateLimit = new RateLimit();
 
     @JsonProperty("rate_limit_for_api_key_time_window_map_clean_thread_trigger_on_items_count")
     private long rateLimitForApiKeyTimeWindowMapCleanThreadTriggerItemsCount = 1000;
@@ -36,18 +35,33 @@ public class HotelsConfig implements RateLimitConfig, CSVHotelsDALConfig {
     @JsonProperty("csv_file_path")
     private String csvFilePath;
 
-    @JsonProperty("api_keys_custom_rate_limits")
-    Map<String, CustomRateLimit> apiKeysCustomRateLimits = new HashMap<>();
+    @JsonProperty("api_keys")
+    Map<String, RateLimit> apiKeysRateLimits = new HashMap<>();
 
     @Override
-    public CustomRateLimit getRateLimitForAPIKey(String apiKey) {
-        return apiKeysCustomRateLimits.getOrDefault(apiKey, defaultRateLimit);
+    public RateLimit getRateLimitForAPIKey(String apiKey) {
+        RateLimit rateLimit = apiKeysRateLimits.get(apiKey);
+        return rateLimit == null ? defaultRateLimit : rateLimit;
+    }
+
+    public Set<String> getAPIKeys() {
+        return apiKeysRateLimits.keySet();
     }
 
     public static HotelsConfig load(String settingsFile) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         mapper.setAnnotationIntrospector(new JacksonLombokAnnotationIntrospector());
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return mapper.readValue(new File(settingsFile), HotelsConfig.class);
+        HotelsConfig hotelsConfig = mapper.readValue(new File(settingsFile), HotelsConfig.class);
+        fillDefaults(hotelsConfig);
+        return hotelsConfig;
+    }
+
+    private static void fillDefaults(HotelsConfig hotelsConfig) {
+        RateLimit defaultRateLimit = hotelsConfig.getDefaultRateLimit();
+        defaultRateLimit.updateNullValues(RateLimit.getDefault());
+        hotelsConfig.getApiKeysRateLimits().values().stream()
+                .filter(v -> v != null)
+                .forEach(rateLimit -> rateLimit.updateNullValues(defaultRateLimit));
     }
 }

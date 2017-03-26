@@ -1,8 +1,9 @@
 package com.exercise.hotels;
 
+import com.exercise.hotels.auth.ByConfigAuthenticationHandler;
 import com.exercise.hotels.config.HotelsConfig;
 import com.exercise.hotels.dal.csv.CSVHotelsDAL;
-import com.exercise.hotels.ratelimit.InMemoryRateLimitHandler;
+import com.exercise.hotels.auth.InMemoryRateLimitHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -13,7 +14,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 
 @Configuration
-@Import({InMemoryRateLimitHandler.class})
+@Import({InMemoryRateLimitHandler.class, ByConfigAuthenticationHandler.class})
 public class ApplicationConfig {
 
     @Inject

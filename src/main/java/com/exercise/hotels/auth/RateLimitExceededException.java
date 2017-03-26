@@ -1,4 +1,4 @@
-package com.exercise.hotels.ratelimit;
+package com.exercise.hotels.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
