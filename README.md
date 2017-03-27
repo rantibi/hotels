@@ -1,4 +1,6 @@
 # Hotels
+This repository is a solution for the following exercise:
+
 You are provided with hotels database in CSV (Comma Separated Values) format.
 We need you to implement HTTP service, according to the API requirements described below. 
 1.  RateLimit: API calls need to be rate limited (request per 10 seconds) based on API Key provided in each http call.
@@ -7,8 +9,13 @@ We need you to implement HTTP service, according to the API requirements describ
 2.  Search hotels by CityId
 3.  Provide optional sorting of the result by Price (both ASC and DESC order).
 
+https://github.com/itplatform/hotelapi
+
 # Constraints
-1. According to our conversation, I assumed that the memory can hold all the CSV.
+1. The memory can hold all the CSV.
+2. Seed a few example API keys and hold them in Memory on startup.
+3. The CSV can not change while the application is running.
+4. The API response should be json.
 
 # Configuration
 You can find an exmple of the configuration file under `test` folder.
