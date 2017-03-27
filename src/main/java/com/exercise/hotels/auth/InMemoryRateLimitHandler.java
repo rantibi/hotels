@@ -20,7 +20,7 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
     private RateLimitConfig config;
 
     private ConcurrentHashMap<APIKeyTimeWindow, AtomicLong> requestForAPIKey = new ConcurrentHashMap<>();
-    private Map<String, Long> suspendedAPIKeys = new HashMap<>();
+    private ConcurrentHashMap<String, Long> suspendedAPIKeys = new ConcurrentHashMap<>();
     private AtomicBoolean isCleanRequestForAPIKeyThreadActive = new AtomicBoolean(false);
     private AtomicBoolean isCleanSuspendedAPIKeysThreadActive = new AtomicBoolean(false);
     private Striped<Lock> locks;
@@ -40,7 +40,7 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
 
         if (requests == null) {
             requests = newRequests;
-            cleanExpiredAPIKeyTimeWindows();
+            cleanExpiredAPIKeyTimeWindows(currMillis);
         }
 
         long currentRequests = requests.incrementAndGet();
@@ -62,7 +62,7 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
                 lock.unlock();
             }
 
-            cleanExpiredSuspendedAPIKeys();
+            cleanExpiredSuspendedAPIKeys(currMillis);
             throw new RateLimitExceededException(suspendUntil);
         }
     }
@@ -88,7 +88,7 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
         }
     }
 
-    private void cleanExpiredAPIKeyTimeWindows() {
+    private void cleanExpiredAPIKeyTimeWindows(long currMillis) {
         if (requestForAPIKey.size() >= config.getRateLimitForApiKeyTimeWindowMapCleanThreadTriggerItemsCount()) {
             if (!isCleanRequestForAPIKeyThreadActive.getAndSet(true)) {
                 new Thread(new Runnable() {
@@ -96,7 +96,7 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
                     public void run() {
                         try {
                             requestForAPIKey.keySet().stream()
-                                    .filter(apiKeyTimeWindow -> apiKeyTimeWindow.isExpired(System.currentTimeMillis()))
+                                    .filter(apiKeyTimeWindow -> apiKeyTimeWindow.isExpired(currMillis))
                                     .forEach(apiKeyTimeWindow -> requestForAPIKey.remove(apiKeyTimeWindow));
                         } finally {
                             isCleanRequestForAPIKeyThreadActive.set(false);
@@ -107,7 +107,7 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
         }
     }
 
-    private void cleanExpiredSuspendedAPIKeys() {
+    private void cleanExpiredSuspendedAPIKeys(long currMillis) {
         if (suspendedAPIKeys.size() >= config.getSuspendedCleanThreadTriggerItemsCount()) {
             if (!isCleanSuspendedAPIKeysThreadActive.getAndSet(true)) {
                 new Thread(new Runnable() {
@@ -115,7 +115,9 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
                     public void run() {
                         try {
                             suspendedAPIKeys.entrySet().stream()
-                                    .filter(entry -> entry.getValue() < System.currentTimeMillis())
+                                    .filter(entry -> {
+                                        return entry.getValue() < currMillis;
+                                    })
                                     .forEach(entry -> {
                                         Lock lock = locks.get(entry.getKey());
 
