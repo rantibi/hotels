@@ -1,6 +1,7 @@
 package com.exercise.hotels;
 
 import com.exercise.hotels.auth.ByConfigAuthenticationHandler;
+import com.exercise.hotels.clock.SystemClock;
 import com.exercise.hotels.config.HotelsConfig;
 import com.exercise.hotels.dal.csv.CSVHotelsDAL;
 import com.exercise.hotels.auth.InMemoryRateLimitHandler;
@@ -14,7 +15,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 
 @Configuration
-@Import({InMemoryRateLimitHandler.class, ByConfigAuthenticationHandler.class})
+@Import({InMemoryRateLimitHandler.class, ByConfigAuthenticationHandler.class, SystemClock.class})
 public class ApplicationConfig {
 
     @Inject

@@ -20,7 +20,7 @@ public class CSVHotelsDAL implements HotelsDAL {
 
     @Override
     public Iterable<Hotel> getHotelsByCity(String city, Order priceOrder) {
-        NavigableSet<Hotel> hotels = hotelsByCity.get(city);
+        NavigableSet<Hotel> hotels = hotelsByCity.getOrDefault(city, new TreeSet<>());
         final Iterator<Hotel> iter;
 
         if (priceOrder == null) {
@@ -30,6 +30,7 @@ public class CSVHotelsDAL implements HotelsDAL {
                 case DESC:
                     iter = hotels.descendingIterator();
                     break;
+                case ASC:
                 default:
                     iter = hotels.iterator();
             }

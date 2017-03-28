@@ -3,6 +3,7 @@ package com.exercise.hotels.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -21,6 +22,13 @@ public class RateLimit {
     private Long rateLimitTimeWindowSeconds;
     @JsonProperty("requests_rate_limit")
     private Long requestsRateLimit;
+
+    @Builder
+    public RateLimit(Long rateLimitSuspendSeconds, Long rateLimitTimeWindowSeconds, Long requestsRateLimit) {
+        this.rateLimitSuspendSeconds = rateLimitSuspendSeconds;
+        this.rateLimitTimeWindowSeconds = rateLimitTimeWindowSeconds;
+        this.requestsRateLimit = requestsRateLimit;
+    }
 
     public void updateNullValues(RateLimit defaultRateLimit) {
         if (rateLimitSuspendSeconds == null) {

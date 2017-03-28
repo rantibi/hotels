@@ -15,6 +15,10 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/hotels/{api_key}")

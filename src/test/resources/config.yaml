@@ -1,6 +1,6 @@
 default_rate_limit:
   # The number of second the the user suspended after exceeding the limit
-  rate_limit_suspend_seconds: 10
+  rate_limit_suspend_seconds: 300
 
   # Time window for the rate limit. If this parameter set to 10 and the parameter `requests_rate_limit` set to 1
   # it means `1 request per 10 seconds`

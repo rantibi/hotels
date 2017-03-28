@@ -1,5 +1,6 @@
 package com.exercise.hotels.auth;
 
+import com.exercise.hotels.clock.Clock;
 import com.exercise.hotels.config.RateLimitConfig;
 import com.google.common.util.concurrent.Striped;
 import lombok.EqualsAndHashCode;
@@ -19,20 +20,24 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
     @Inject
     private RateLimitConfig config;
 
+    @Inject
+    private Clock clock;
+
     private ConcurrentHashMap<APIKeyTimeWindow, AtomicLong> requestForAPIKey = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Long> suspendedAPIKeys = new ConcurrentHashMap<>();
     private AtomicBoolean isCleanRequestForAPIKeyThreadActive = new AtomicBoolean(false);
     private AtomicBoolean isCleanSuspendedAPIKeysThreadActive = new AtomicBoolean(false);
     private Striped<Lock> locks;
 
-    public InMemoryRateLimitHandler(RateLimitConfig config) {
+    public InMemoryRateLimitHandler(RateLimitConfig config, Clock clock) {
         this.config = config;
+        this.clock = clock;
         locks = Striped.lock(config.getRateLimitSuspendedApiKeysLocksCount());
     }
 
     @Override
     public void increase(String apiKey) throws RateLimitExceededException {
-        long currMillis = System.currentTimeMillis();
+        long currMillis = clock.currentTimeMillis();
         checkSuspended(apiKey, currMillis);
 
         AtomicLong newRequests = new AtomicLong(0);
@@ -123,7 +128,7 @@ public class InMemoryRateLimitHandler implements RateLimitHandler {
 
                                         try {
                                             lock.lock();
-                                            requestForAPIKey.remove(entry.getKey());
+                                            suspendedAPIKeys.remove(entry.getKey());
                                         } finally {
                                             lock.unlock();
                                         }
