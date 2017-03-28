@@ -9,8 +9,6 @@ We need you to implement HTTP service, according to the API requirements describ
 2.  Search hotels by CityId
 3.  Provide optional sorting of the result by Price (both ASC and DESC order).
 
-https://github.com/itplatform/hotelapi
-
 # Constraints
 1. The memory can hold all the CSV.
 2. Seed a few example API keys and hold them in Memory on startup.
